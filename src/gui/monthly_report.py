@@ -210,8 +210,22 @@ class MonthlyReportWindow(tk.Toplevel):
             else:
                 messagebox.showerror("Error", "No se pudo enviar el reporte a la impresora.")
 
+        def export_excel():
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Archivos Excel", "*.xlsx")],
+                title="Exportar a Excel",
+                initialfile=f"Reporte_Mensual_{MESES_ESPANOL[month]}_{year}.xlsx"
+            )
+            if filename:
+                if generate_monthly_excel_report(filename, year, month, employee_data):
+                    messagebox.showinfo("Éxito", f"Reporte exportado a Excel:\n{filename}")
+                else:
+                    messagebox.showerror("Error", "No se pudo generar el archivo Excel")
+
         tk.Button(action_frame, text="Guardar PDF", command=save_pdf, bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
         tk.Button(action_frame, text="Imprimir", command=print_report, bg="#2196F3", fg="white").pack(side=tk.LEFT, padx=5)
+        tk.Button(action_frame, text="Exportar a Excel", command=export_excel, bg="#FFC107", fg="white").pack(side=tk.LEFT, padx=5)
         tk.Button(action_frame, text="Cerrar", command=preview_window.destroy, bg="#F44336", fg="white").pack(side=tk.RIGHT, padx=5)
 
         # Visor de PDF
