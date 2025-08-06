@@ -151,7 +151,7 @@ class MonthlyReportWindow(tk.Toplevel):
                 emp_name = emp_string.split(" (ID:")[0]
 
                 # Obtener datos y horario
-                report_data, _, _ = self.controlador.calcular_asistencia_mensual(emp_id, month, year)
+                report_data, total_horas, counters = self.controlador.calcular_asistencia_mensual(emp_id, month, year)
 
                 if not report_data:
                     messagebox.showwarning("Sin Datos", f"No se encontraron datos para {emp_name} en el período seleccionado.")
@@ -163,7 +163,9 @@ class MonthlyReportWindow(tk.Toplevel):
                 employee_data.append({
                     'nombre': emp_name,
                     'datos': report_data,
-                    'horario': schedule
+                    'horario': schedule,
+                    'total_horas': total_horas,
+                    'contadores': counters
                 })
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo procesar a {emp_name}:\n{e}")
