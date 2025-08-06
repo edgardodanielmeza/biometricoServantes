@@ -38,6 +38,26 @@ def _draw_employee_report_page(story, styles, employee_name, start_date, end_dat
     story.append(title)
     story.append(Spacer(1, 2*mm))
 
+    # Calcular resumen de estados
+    counters = {'Normal': 0, 'Falta': 0, 'Tardanza': 0, 'Salida temprana': 0}
+    for dia in attendance_data:
+        estado = dia['estado']
+        if "Tardanza" in estado:
+            counters['Tardanza'] += 1
+        if "Salida temprana" in estado:
+            counters['Salida temprana'] += 1
+        if estado == "Normal":
+            counters['Normal'] += 1
+        elif estado == "Falta":
+            counters['Falta'] += 1
+
+    resumen_text = (
+        f"Resumen: Normales {counters['Normal']} | "
+        f"Faltas {counters['Falta']} | "
+        f"Tardanzas {counters['Tardanza']} | "
+        f"Salidas Tempranas {counters['Salida temprana']}"
+    )
+
     # Información del empleado y período
     fecha_inicio_fmt = datetime.strptime(start_date, "%Y-%m-%d").strftime("%d/%m/%Y")
     fecha_fin_fmt = datetime.strptime(end_date, "%Y-%m-%d").strftime("%d/%m/%Y")
@@ -45,7 +65,7 @@ def _draw_employee_report_page(story, styles, employee_name, start_date, end_dat
     info_text = f"""
     <b>Empleado:</b> {employee_name}<br/>
     <b>Período:</b> {fecha_inicio_fmt} al {fecha_fin_fmt}<br/>
-    <b>Horario Referencia:</b> {horario_referencia[0]} - {horario_referencia[1]}
+    <b>{resumen_text}</b>
     """
     story.append(Paragraph(info_text, styles['Normal']))
     story.append(Spacer(1, 5*mm))
@@ -76,7 +96,11 @@ def _draw_employee_report_page(story, styles, employee_name, start_date, end_dat
     total_segundos = total_horas.total_seconds()
     h, m = divmod(total_segundos / 60, 60)
     total_horas_str = f"{int(h):02d}:{int(m):02d}:00"
-    datos_tabla.append(['', '', '', '', '<b>TOTAL</b>', total_horas_str, ''])
+
+    # Envolver texto con formato HTML en objetos Paragraph
+    total_label = Paragraph('<b>TOTAL</b>', styles['Normal'])
+    total_value = Paragraph(f'<b>{total_horas_str}</b>', styles['Normal'])
+    datos_tabla.append(['', '', '', '', total_label, total_value, ''])
 
     table = Table(datos_tabla, colWidths=[20*mm, 20*mm, 25*mm, 20*mm, 20*mm, 20*mm, 50*mm], repeatRows=1)
 
