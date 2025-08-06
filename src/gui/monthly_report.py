@@ -185,7 +185,10 @@ class MonthlyReportWindow(tk.Toplevel):
 
         preview_window = tk.Toplevel(self)
         preview_window.title(f"Previsualización - Reporte Mensual")
-        preview_window.geometry("1000x800")
+        try:
+            preview_window.state('zoomed')
+        except tk.TclError:
+            preview_window.geometry("1000x800") # Fallback for non-Windows/Mac
 
         main_frame = tk.Frame(preview_window, padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)

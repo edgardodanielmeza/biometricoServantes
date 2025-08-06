@@ -63,8 +63,7 @@ def _draw_employee_report_page(story, styles, employee_name, start_date, end_dat
     fecha_fin_fmt = datetime.strptime(end_date, "%Y-%m-%d").strftime("%d/%m/%Y")
 
     info_text = f"""
-    <b>Empleado:</b> {employee_name}<br/>
-    <b>Período:</b> {fecha_inicio_fmt} al {fecha_fin_fmt}<br/>
+    <b>Empleado:</b> {employee_name}&nbsp;&nbsp;&nbsp;&nbsp;<b>Período:</b> {fecha_inicio_fmt} al {fecha_fin_fmt}<br/>
     <b>{resumen_text}</b>
     """
     story.append(Paragraph(info_text, styles['Normal']))

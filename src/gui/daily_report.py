@@ -148,7 +148,10 @@ class DailyReportWindow(tk.Toplevel):
     def previsualizar_reporte(self, empleado, fecha_inicio, fecha_fin, datos, horario):
         previsualizacion = tk.Toplevel(self)
         previsualizacion.title(f"Previsualización - {empleado}")
-        previsualizacion.geometry("1000x800")
+        try:
+            previsualizacion.state('zoomed')
+        except tk.TclError:
+            previsualizacion.geometry("1000x800") # Fallback for non-Windows/Mac
 
         main_frame = tk.Frame(previsualizacion, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
