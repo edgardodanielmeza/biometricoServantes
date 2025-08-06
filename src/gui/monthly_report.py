@@ -15,294 +15,204 @@ class MonthlyReportWindow(tk.Toplevel):
         super().__init__(master)
         self.title("Reporte Mensual de Asistencia")
         self.controlador = ComunReportes()
-        self._setup_ui()
-        self._center_window(1000, 700)
-        self._load_employees()
 
-    def _center_window(self, width, height):
-        """Centra la ventana en la pantalla"""
+        # Almacenar todos los empleados para el filtrado
+        self.all_employees = []
+
+        self.crear_interfaz()
+        self.center_window(900, 600)
+        self.load_employees()
+
+    def center_window(self, width, height):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         x = (screen_width // 2) - (width // 2)
         y = (screen_height // 2) - (height // 2)
         self.geometry(f'{width}x{height}+{x}+{y}')
 
-    def _setup_ui(self):
-        """Configura la interfaz de usuario"""
+    def crear_interfaz(self):
         main_frame = tk.Frame(self, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Frame de controles
-        control_frame = tk.Frame(main_frame)
-        control_frame.pack(fill=tk.X, pady=10)
+        # Frame de período (Mes y Año)
+        period_frame = tk.Frame(main_frame)
+        period_frame.pack(fill=tk.X, pady=5)
 
-        # Frame de periodo
-        period_frame = tk.Frame(control_frame)
-        period_frame.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
-
-        tk.Label(period_frame, text="Mes:", font=("Arial", 12)).grid(row=0, column=0, padx=5, sticky='e')
-
+        tk.Label(period_frame, text="Mes:", font=("Arial", 12)).pack(side=tk.LEFT, padx=(0, 5))
         self.month_combo = ttk.Combobox(
             period_frame,
             values=[MESES_ESPANOL[i] for i in range(1, 13)],
             font=("Arial", 12),
-            state="readonly"
+            state="readonly",
+            width=15
         )
-        self.month_combo.grid(row=0, column=1, padx=5, sticky='w')
+        self.month_combo.pack(side=tk.LEFT, padx=5)
         self.month_combo.current(datetime.now().month - 1)
 
-        tk.Label(period_frame, text="Año:", font=("Arial", 12)).grid(row=0, column=2, padx=5, sticky='e')
-
+        tk.Label(period_frame, text="Año:", font=("Arial", 12)).pack(side=tk.LEFT, padx=(20, 5))
         self.year_spin = tk.Spinbox(
             period_frame,
             from_=2020,
             to=2100,
             font=("Arial", 12),
-            width=5
+            width=6
         )
         self.year_spin.delete(0, "end")
         self.year_spin.insert(0, datetime.now().year)
-        self.year_spin.grid(row=0, column=3, padx=5, sticky='w')
+        self.year_spin.pack(side=tk.LEFT, padx=5)
 
-        # Frame de empleados
-        employee_frame = tk.Frame(control_frame)
-        employee_frame.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
+        # Frame de búsqueda
+        search_frame = tk.Frame(main_frame)
+        search_frame.pack(fill=tk.X, pady=(10, 5))
 
-        tk.Label(employee_frame, text="Empleados:", font=("Arial", 12)).grid(row=0, column=0, padx=5, sticky='e')
+        tk.Label(search_frame, text="Buscar Empleado:", font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(search_frame, textvariable=self.search_var, font=("Arial", 12), width=30)
+        self.search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        self.search_entry.bind('<KeyRelease>', self.filter_employees)
 
-        self.employee_listbox = tk.Listbox(
-            employee_frame,
-            selectmode=tk.MULTIPLE,
-            font=("Arial", 11),
-            width=30,
-            height=10
-        )
-        scroll_employees = tk.Scrollbar(employee_frame, orient=tk.VERTICAL, command=self.employee_listbox.yview)
-        self.employee_listbox.config(yscrollcommand=scroll_employees.set)
+        # Frame de lista de empleados
+        list_frame = tk.Frame(main_frame, height=200)
+        list_frame.pack(fill=tk.X, pady=10)
+        list_frame.pack_propagate(False)
 
-        self.employee_listbox.grid(row=0, column=1, rowspan=2, padx=5, sticky='nsew')
-        scroll_employees.grid(row=0, column=2, rowspan=2, padx=0, sticky='ns')
+        self.employee_listbox = tk.Listbox(list_frame, font=("Arial", 12), selectmode=tk.MULTIPLE)
 
-        # Botones de selección
-        select_buttons_frame = tk.Frame(employee_frame)
-        select_buttons_frame.grid(row=0, column=3, rowspan=2, padx=5, sticky='n')
+        scrollbar_y = tk.Scrollbar(list_frame, orient="vertical", command=self.employee_listbox.yview)
+        self.employee_listbox.config(yscrollcommand=scrollbar_y.set)
 
-        tk.Button(select_buttons_frame, text="Todos", command=self._select_all, width=10).pack(pady=2)
-        tk.Button(select_buttons_frame, text="Ninguno", command=self._deselect_all, width=10).pack(pady=2)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+        self.employee_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Frame para botones de selección
+        selection_frame = tk.Frame(main_frame)
+        selection_frame.pack(fill=tk.X, pady=5)
+
+        tk.Button(selection_frame, text="Seleccionar Todos", command=self.select_all).pack(side=tk.LEFT, padx=5)
+        tk.Button(selection_frame, text="Deseleccionar Todos", command=self.deselect_all).pack(side=tk.LEFT, padx=5)
 
         # Frame de acciones
         action_frame = tk.Frame(main_frame)
-        action_frame.pack(fill=tk.X, pady=20)
+        action_frame.pack(fill=tk.X, pady=(20, 0))
 
-        tk.Button(
-            action_frame,
-            text="Generar Reporte",
-            command=self._generate_report,
-            font=("Arial", 12),
-            bg="#4CAF50",
-            fg="white",
-            width=15
-        ).pack(side=tk.LEFT, padx=10)
+        tk.Button(action_frame, text="Generar Reporte", command=self.generate_report, font=("Arial", 12), bg="#4CAF50", fg="white", width=15).pack(side=tk.LEFT, padx=10)
+        tk.Button(action_frame, text="Salir", command=self.destroy, font=("Arial", 12), bg="#F44336", fg="white", width=15).pack(side=tk.LEFT, padx=10)
 
-        tk.Button(
-            action_frame,
-            text="Salir",
-            command=self.destroy,
-            font=("Arial", 12),
-            bg="#F44336",
-            fg="white",
-            width=15
-        ).pack(side=tk.LEFT, padx=10)
-
-    def _load_employees(self):
-        """Carga los empleados activos"""
+    def load_employees(self):
+        """Carga la lista inicial de empleados."""
         try:
-            employees = self.controlador.obtener_empleados_activos()
-            for emp in employees:
-                self.employee_listbox.insert(tk.END, f"{emp[1]} {emp[2]} (ID: {emp[0]})")
+            self.all_employees = self.controlador.obtener_empleados_activos()
+            self.filter_employees()
         except Exception as e:
             messagebox.showerror("Error", f"No se pudieron cargar los empleados:\n{str(e)}")
 
-    def _select_all(self):
-        """Selecciona todos los empleados"""
+    def filter_employees(self, event=None):
+        """Filtra la lista de empleados según el término de búsqueda."""
+        search_term = self.search_var.get().lower()
+
+        # Guardar selecciones actuales
+        selected_items = {self.employee_listbox.get(i) for i in self.employee_listbox.curselection()}
+
+        self.employee_listbox.delete(0, tk.END)
+
+        for emp_id, first_name, last_name in self.all_employees:
+            full_name = f"{first_name} {last_name} (ID: {emp_id})"
+            if search_term in full_name.lower():
+                self.employee_listbox.insert(tk.END, full_name)
+                # Restaurar selección si el item estaba seleccionado
+                if full_name in selected_items:
+                    self.employee_listbox.selection_set(tk.END)
+
+    def select_all(self):
         self.employee_listbox.selection_set(0, tk.END)
 
-    def _deselect_all(self):
-        """Deselecciona todos los empleados"""
+    def deselect_all(self):
         self.employee_listbox.selection_clear(0, tk.END)
 
-    def _generate_report(self):
-        """Genera el reporte mensual"""
+    def generate_report(self):
+        """Genera el reporte para los empleados seleccionados."""
+        selected_indices = self.employee_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Advertencia", "Seleccione al menos un empleado.")
+            return
+
         try:
             month = self.month_combo.current() + 1
             year = int(self.year_spin.get())
-        except:
-            messagebox.showerror("Error", "Seleccione un mes y año válidos")
-            return
-
-        selected_indices = self.employee_listbox.curselection()
-        if not selected_indices:
-            messagebox.showwarning("Advertencia", "Seleccione al menos un empleado")
+        except (tk.TclError, ValueError):
+            messagebox.showerror("Error", "Por favor, ingrese un año válido.")
             return
 
         employee_data = []
-        error_messages = []
-
-        for idx in selected_indices:
-            employee = self.employee_listbox.get(idx)
+        for index in selected_indices:
+            emp_string = self.employee_listbox.get(index)
             try:
-                employee_id = int(employee.split("(ID: ")[1].replace(")", ""))
-                employee_name = employee.split(" (ID:")[0]
+                emp_id = int(emp_string.split("(ID: ")[1].replace(")", ""))
+                emp_name = emp_string.split(" (ID:")[0]
 
-                # Obtener datos mensuales
-                data, total_hours, counters = self.controlador.calcular_asistencia_mensual(employee_id, month, year)
+                # Obtener datos y horario
+                report_data, _, _ = self.controlador.calcular_asistencia_mensual(emp_id, month, year)
 
-                if not data:
-                    error_messages.append(f"No hay datos para {employee_name}")
+                if not report_data:
+                    messagebox.showwarning("Sin Datos", f"No se encontraron datos para {emp_name} en el período seleccionado.")
                     continue
 
-                # Obtener horario de referencia
-                reference_date = f"{year}-{month:02d}-01"
-                schedule = self.controlador.obtener_horario_empleado(employee_id, reference_date)
+                ref_date = f"{year}-{month:02d}-01"
+                schedule = self.controlador.obtener_horario_empleado(emp_id, ref_date)
 
                 employee_data.append({
-                    'id': employee_id,
-                    'nombre': employee_name,
-                    'datos': data,
-                    'horario': schedule,
-                    'total_horas': total_hours,
-                    'contadores': counters
+                    'nombre': emp_name,
+                    'datos': report_data,
+                    'horario': schedule
                 })
-
             except Exception as e:
-                error_messages.append(f"Error procesando {employee}: {str(e)}")
-                continue
-
-        if error_messages:
-            messagebox.showwarning(
-                "Advertencia",
-                "Se encontraron algunos errores:\n\n" + "\n".join(error_messages)
-            )
+                messagebox.showerror("Error", f"No se pudo procesar a {emp_name}:\n{e}")
 
         if employee_data:
-            self._show_preview(employee_data, month, year)
-        else:
-            messagebox.showinfo("Información", "No hay datos para generar el reporte")
+            self.show_preview(employee_data, year, month)
 
-    def _show_preview(self, employee_data, month, year):
-        """Muestra la previsualización del reporte"""
-        preview = tk.Toplevel(self)
-        preview.title(f"Previsualización - {MESES_ESPANOL[month]} {year}")
-        preview.geometry("1100x800")
+    def show_preview(self, employee_data, year, month):
+        """Muestra la ventana de previsualización del PDF."""
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+            temp_path = temp_file.name
 
-        # Crear archivo temporal
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
-                temp_path = temp_file.name
-        except Exception as e:
-            messagebox.showerror("Error", f"No se pudo crear archivo temporal:\n{str(e)}")
-            return
-
-        # Generar PDF
         if not generate_monthly_report(temp_path, year, month, employee_data):
             os.unlink(temp_path)
-            messagebox.showerror("Error", "No se pudo generar el PDF")
+            messagebox.showerror("Error", "No se pudo generar el reporte en PDF.")
             return
 
-        # Frame principal
-        main_frame = tk.Frame(preview, padx=20, pady=20)
+        preview_window = tk.Toplevel(self)
+        preview_window.title(f"Previsualización - Reporte Mensual")
+        preview_window.geometry("1000x800")
+
+        main_frame = tk.Frame(preview_window, padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Información del reporte
-        info_frame = tk.Frame(main_frame)
-        info_frame.pack(fill=tk.X, pady=10)
-
-        month_name = MESES_ESPANOL[month]
-
-        # Calcular totales
-        total_absences = sum(emp['contadores'].get('faltas', 0) for emp in employee_data)
-        total_delays = sum(emp['contadores'].get('tardanzas', 0) for emp in employee_data)
-        total_early_departures = sum(emp['contadores'].get('salidas_tempranas', 0) for emp in employee_data)
-
-        tk.Label(
-            info_frame,
-            text=f"Reporte Mensual - {month_name} {year}",
-            font=("Arial", 14, "bold")
-        ).pack(anchor="w")
-
-        tk.Label(
-            info_frame,
-            text=f"Empleados: {len(employee_data)} | Faltas: {total_absences} | Tardanzas: {total_delays} | Salidas tempranas: {total_early_departures}",
-            font=("Arial", 12)
-        ).pack(anchor="w")
 
         # Botones de acción
         action_frame = tk.Frame(main_frame)
-        action_frame.pack(fill=tk.X, pady=10)
+        action_frame.pack(fill=tk.X, pady=5)
 
         def save_pdf():
             filename = filedialog.asksaveasfilename(
                 defaultextension=".pdf",
                 filetypes=[("Archivos PDF", "*.pdf")],
-                title="Guardar reporte como",
-                initialfile=f"Reporte_Mensual_{month_name}_{year}.pdf"
+                initialfile=f"Reporte_Mensual_{MESES_ESPANOL[month]}_{year}.pdf"
             )
             if filename:
-                try:
-                    shutil.copy(temp_path, filename)
-                    messagebox.showinfo("Éxito", f"Reporte guardado en:\n{filename}")
-                except Exception as e:
-                    messagebox.showerror("Error", f"No se pudo guardar el archivo:\n{str(e)}")
+                shutil.copy(temp_path, filename)
+                messagebox.showinfo("Éxito", f"Reporte guardado en:\n{filename}")
 
-        def print_pdf():
+        def print_report():
             if imprimir_pdf(temp_path):
-                messagebox.showinfo("Éxito", "Reporte enviado a la impresora")
+                messagebox.showinfo("Éxito", "Reporte enviado a la impresora.")
             else:
-                messagebox.showerror("Error", "No se pudo enviar a imprimir")
+                messagebox.showerror("Error", "No se pudo enviar el reporte a la impresora.")
 
-        def open_external():
-            try:
-                if platform.system() == 'Windows':
-                    os.startfile(temp_path)
-                elif platform.system() == 'Darwin':  # macOS
-                    os.system(f'open "{temp_path}"')
-                else:  # linux
-                    os.system(f'xdg-open "{temp_path}"')
-            except Exception as e:
-                messagebox.showerror("Error", f"No se pudo abrir el visor PDF:\n{str(e)}")
+        tk.Button(action_frame, text="Guardar PDF", command=save_pdf, bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
+        tk.Button(action_frame, text="Imprimir", command=print_report, bg="#2196F3", fg="white").pack(side=tk.LEFT, padx=5)
+        tk.Button(action_frame, text="Cerrar", command=preview_window.destroy, bg="#F44336", fg="white").pack(side=tk.RIGHT, padx=5)
 
-        def export_excel():
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".xlsx",
-                filetypes=[("Archivos Excel", "*.xlsx")],
-                title="Exportar a Excel",
-                initialfile=f"Reporte_Mensual_{month_name}_{year}.xlsx"
-            )
-            if filename:
-                if generate_monthly_excel_report(filename, year, month, employee_data):
-                    messagebox.showinfo("Éxito", f"Reporte exportado a Excel:\n{filename}")
-                else:
-                    messagebox.showerror("Error", "No se pudo generar el archivo Excel")
-
-        buttons = [
-            ("Guardar PDF", "#4CAF50", save_pdf),
-            ("Imprimir", "#2196F3", print_pdf),
-            ("Abrir en Visor", "#FF9800", open_external),
-            ("Exportar a Excel", "#FFC107", export_excel),
-            ("Cerrar", "#F44336", preview.destroy)
-        ]
-
-        for text, color, command in buttons:
-            tk.Button(
-                action_frame,
-                text=text,
-                bg=color,
-                fg="white",
-                width=15,
-                command=command
-            ).pack(side=tk.LEFT, padx=5)
-
-        # Visor PDF
+        # Visor de PDF
         pdf_frame = tk.Frame(main_frame)
         pdf_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
@@ -311,20 +221,13 @@ class MonthlyReportWindow(tk.Toplevel):
             pdf_viewer.pack(fill=tk.BOTH, expand=True)
             pdf_viewer.show_pdf(temp_path)
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo cargar el visor PDF:\n{str(e)}")
-            tk.Label(
-                pdf_frame,
-                text="Vista previa no disponible. Use los botones para guardar o imprimir.",
-                font=("Arial", 12)
-            ).pack(expand=True)
+            tk.Label(pdf_frame, text=f"Error al mostrar PDF: {e}").pack()
 
-        # Limpieza al cerrar
         def on_close():
             try:
                 if os.path.exists(temp_path):
                     os.unlink(temp_path)
-            except:
-                pass
-            preview.destroy()
+            finally:
+                preview_window.destroy()
 
-        preview.protocol("WM_DELETE_WINDOW", on_close)
+        preview_window.protocol("WM_DELETE_WINDOW", on_close)

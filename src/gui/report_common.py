@@ -159,7 +159,8 @@ class ComunReportes:
             datos_diarios = self.calcular_asistencia_diaria(employee_id, fecha_inicio, fecha_fin)
 
             # La GUI mensual espera una tupla de (datos, total_horas, contadores).
-            # Devolvemos los datos diarios y valores placeholder para los otros dos.
+            # Devolvemos los datos diarios y valores placeholder para los otros dos,
+            # ya que el reporte mensual ahora solo replica el formato del diario.
             return datos_diarios, "00:00", {}
         except Exception as e:
             messagebox.showerror("Error", f"Ocurrió un error al calcular la asistencia mensual:\n{e}")
