@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from .daily_report import DailyReportWindow
 from .monthly_report import MonthlyReportWindow
+from .punch_log_report import PunchLogReportWindow
 
 class MainMenu(tk.Tk):
     def __init__(self, db):
@@ -26,6 +27,7 @@ class MainMenu(tk.Tk):
         buttons = [
             ("Reporte de Asistencia Diaria", self.open_daily_report),
             ("Reporte de Asistencia Mensual", self.open_monthly_report),
+            ("Registro de Marcaciones", self.open_punch_log_report),
             ("Salir", self.quit)
         ]
 
@@ -47,3 +49,6 @@ class MainMenu(tk.Tk):
 
     def open_monthly_report(self):
         MonthlyReportWindow(self)
+
+    def open_punch_log_report(self):
+        PunchLogReportWindow(self)

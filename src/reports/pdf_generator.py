@@ -255,3 +255,102 @@ def generate_monthly_excel_report(file_path, year, month, attendance_data):
     except Exception as e:
         print(f"Error al generar Excel mensual: {e}")
         return False
+
+def generate_punch_log_report(file_path, employee_name, start_date, end_date, punch_data):
+    """Genera un reporte con el listado de todas las marcaciones."""
+    try:
+        doc = SimpleDocTemplate(file_path, pagesize=A4, leftMargin=15*mm, rightMargin=15*mm, topMargin=10*mm, bottomMargin=10*mm)
+        styles = getSampleStyleSheet()
+        story = []
+
+        logo_path = os.path.join(os.path.dirname(__file__), '..', '..', 'logo.jpg')
+        if os.path.exists(logo_path):
+            try:
+                logo = ReportLabImage(logo_path, width=60*mm, height=25*mm, kind='proportional')
+                logo.hAlign = 'CENTER'
+                story.append(logo)
+                story.append(Spacer(1, 2*mm))
+            except Exception as e:
+                print(f"Error al cargar el logo: {e}")
+
+        title = Paragraph("Registro de Marcaciones", styles['Title'])
+        story.append(title)
+        story.append(Spacer(1, 5*mm))
+
+        fecha_inicio_fmt = datetime.strptime(start_date, "%Y-%m-%d").strftime("%d/%m/%Y")
+        fecha_fin_fmt = datetime.strptime(end_date, "%Y-%m-%d").strftime("%d/%m/%Y")
+
+        info_text = f"<b>Empleado:</b> {employee_name}&nbsp;&nbsp;&nbsp;&nbsp;<b>Período:</b> {fecha_inicio_fmt} al {fecha_fin_fmt}"
+        story.append(Paragraph(info_text, styles['Normal']))
+        story.append(Spacer(1, 5*mm))
+
+        header = ['Fecha', 'Marcaciones del Día']
+        table_data = [header]
+        for fecha, marcaciones in punch_data:
+            table_data.append([datetime.strptime(fecha, "%Y-%m-%d").strftime('%d/%m/%Y'), marcaciones])
+
+        table = Table(table_data, colWidths=[40*mm, 120*mm], repeatRows=1)
+
+        style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'), # Alinea a la izquierda las marcaciones
+        ])
+
+        table.setStyle(style)
+        story.append(table)
+        story.append(Spacer(1, 5*mm))
+        story.append(Paragraph(f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Italic']))
+
+        doc.build(story)
+        return True
+    except Exception as e:
+        print(f"Error al generar el PDF de registro de marcaciones: {e}")
+        return False
+
+# Placeholder for the Excel version
+def generate_punch_log_excel_report(file_path, employee_name, start_date, end_date, punch_data):
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, Alignment
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Registro de Marcaciones"
+
+        ws.merge_cells('A1:B1')
+        cell = ws['A1']
+        cell.value = "Registro de Marcaciones"
+        cell.font = Font(bold=True, size=16)
+        cell.alignment = Alignment(horizontal='center')
+
+        ws['A3'] = "Empleado:"
+        ws['B3'] = employee_name
+        ws['A4'] = "Período:"
+        ws['B4'] = f"{start_date} a {end_date}"
+
+        ws['A6'] = "Fecha"
+        ws['B6'] = "Marcaciones"
+        ws['A6'].font = Font(bold=True)
+        ws['B6'].font = Font(bold=True)
+
+        row = 7
+        for fecha, marcaciones in punch_data:
+            ws.cell(row=row, column=1, value=fecha)
+            ws.cell(row=row, column=2, value=marcaciones)
+            row += 1
+
+        ws.column_dimensions['A'].width = 15
+        ws.column_dimensions['B'].width = 80
+
+        wb.save(file_path)
+        return True
+    except Exception as e:
+        print(f"Error al generar el Excel de registro de marcaciones: {e}")
+        return False

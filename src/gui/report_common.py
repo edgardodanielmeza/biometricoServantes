@@ -178,3 +178,19 @@ class ComunReportes:
         except Exception as e:
             print(f"Error al obtener horario para {fecha_referencia_str}: {e}")
             return ("Libre", "") # Devuelve Libre si hay error
+
+    def obtener_marcaciones_por_rango(self, employee_id, fecha_inicio, fecha_fin):
+        """Obtiene todas las marcaciones de un empleado en un rango de fechas."""
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    strftime('%Y-%m-%d', punch_time) as fecha,
+                    GROUP_CONCAT(strftime('%H:%M:%S', punch_time), ', ')
+                FROM att_punches
+                WHERE employee_id = ?
+                AND date(punch_time) BETWEEN ? AND ?
+                GROUP BY fecha
+                ORDER BY fecha
+            """, (employee_id, fecha_inicio, fecha_fin))
+            return cursor.fetchall()
