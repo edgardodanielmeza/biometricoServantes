@@ -354,3 +354,101 @@ def generate_punch_log_excel_report(file_path, employee_name, start_date, end_da
     except Exception as e:
         print(f"Error al generar el Excel de registro de marcaciones: {e}")
         return False
+
+def generate_incidents_report(file_path, report_date, incidents_data):
+    """Genera un reporte en PDF con las incidencias de un día."""
+    try:
+        doc = SimpleDocTemplate(file_path, pagesize=A4, leftMargin=10*mm, rightMargin=10*mm, topMargin=10*mm, bottomMargin=10*mm)
+        styles = getSampleStyleSheet()
+        story = []
+
+        logo_path = os.path.join(os.path.dirname(__file__), '..', '..', 'logo.jpg')
+        if os.path.exists(logo_path):
+            logo = ReportLabImage(logo_path, width=60*mm, height=25*mm, kind='proportional')
+            logo.hAlign = 'CENTER'
+            story.append(logo)
+            story.append(Spacer(1, 2*mm))
+
+        report_date_fmt = datetime.strptime(report_date, "%Y-%m-%d").strftime("%d/%m/%Y")
+        title = Paragraph(f"Reporte de Incidencias - {report_date_fmt}", styles['Title'])
+        story.append(title)
+        story.append(Spacer(1, 8*mm))
+
+        header = ['Empleado', 'Incidencia', 'Horario', 'Primera Marcación', 'Última Marcación']
+        table_data = [header]
+
+        for incident in incidents_data:
+            detalle = incident['detalle']
+            horario = f"{detalle['hora_entrada_esperada']} - {detalle['hora_salida_esperada']}"
+            table_data.append([
+                incident['nombre'],
+                detalle['estado'],
+                horario,
+                detalle['primera_entrada'] or '--',
+                detalle['ultima_salida'] or '--'
+            ])
+
+        table = Table(table_data, colWidths=[50*mm, 35*mm, 30*mm, 30*mm, 30*mm], repeatRows=1)
+
+        style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#C00000')), # Red header
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'), # Align names to the left
+        ])
+
+        table.setStyle(style)
+        story.append(table)
+        story.append(Spacer(1, 5*mm))
+        story.append(Paragraph(f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Italic']))
+
+        doc.build(story)
+        return True
+    except Exception as e:
+        print(f"Error al generar el PDF de incidencias: {e}")
+        return False
+
+def generate_incidents_excel_report(file_path, report_date, incidents_data):
+    """Genera un reporte en Excel con las incidencias de un día."""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, Alignment
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Reporte de Incidencias"
+
+        report_date_fmt = datetime.strptime(report_date, "%Y-%m-%d").strftime("%d/%m/%Y")
+        ws.merge_cells('A1:E1')
+        cell = ws['A1']
+        cell.value = f"Reporte de Incidencias - {report_date_fmt}"
+        cell.font = Font(bold=True, size=16)
+        cell.alignment = Alignment(horizontal='center')
+
+        header = ['Empleado', 'Incidencia', 'Horario', 'Primera Marcación', 'Última Marcación']
+        for col_num, col_title in enumerate(header, 1):
+            cell = ws.cell(row=3, column=col_num, value=col_title)
+            cell.font = Font(bold=True)
+
+        row = 4
+        for incident in incidents_data:
+            detalle = incident['detalle']
+            horario = f"{detalle['hora_entrada_esperada']} - {detalle['hora_salida_esperada']}"
+            ws.cell(row=row, column=1, value=incident['nombre'])
+            ws.cell(row=row, column=2, value=detalle['estado'])
+            ws.cell(row=row, column=3, value=horario)
+            ws.cell(row=row, column=4, value=detalle['primera_entrada'] or '--')
+            ws.cell(row=row, column=5, value=detalle['ultima_salida'] or '--')
+            row += 1
+
+        for col_letter in ['A', 'B', 'C', 'D', 'E']:
+            ws.column_dimensions[col_letter].width = 25
+
+        wb.save(file_path)
+        return True
+    except Exception as e:
+        print(f"Error al generar el Excel de incidencias: {e}")
+        return False

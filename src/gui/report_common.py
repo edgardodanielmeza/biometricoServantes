@@ -194,3 +194,31 @@ class ComunReportes:
                 ORDER BY fecha
             """, (employee_id, fecha_inicio, fecha_fin))
             return cursor.fetchall()
+
+    def obtener_incidencias_por_dia(self, fecha):
+        """
+        Obtiene una lista de todos los empleados con incidencias (faltas, tardanzas, etc.)
+        en un día específico.
+        """
+        incidents = []
+        employees = self.obtener_empleados_activos()
+
+        for emp_id, first_name, last_name in employees:
+            # calcular_asistencia_diaria devuelve una lista, tomamos el primer elemento
+            daily_data = self.calcular_asistencia_diaria(emp_id, fecha, fecha)
+            if not daily_data:
+                continue
+
+            asistencia_dia = daily_data[0]
+            estado = asistencia_dia['estado']
+
+            # Definir qué estados se consideran una incidencia
+            estados_incidencia = ["Falta", "Tardanza", "Salida temprana"]
+
+            if any(inc in estado for inc in estados_incidencia):
+                incidents.append({
+                    'nombre': f"{first_name} {last_name}",
+                    'id': emp_id,
+                    'detalle': asistencia_dia
+                })
+        return incidents
