@@ -396,6 +396,7 @@ def generate_incidents_report(file_path, report_date, incidents_data):
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9), # Set font size for all cells
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ('ALIGN', (0, 1), (0, -1), 'LEFT'), # Align names to the left
         ])
