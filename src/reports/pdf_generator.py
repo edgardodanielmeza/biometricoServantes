@@ -388,7 +388,7 @@ def generate_incidents_report(file_path, report_date, incidents_data):
                 detalle['ultima_salida'] or '--'
             ])
 
-        table = Table(table_data, colWidths=[50*mm, 35*mm, 30*mm, 30*mm, 30*mm], repeatRows=1)
+        table = Table(table_data, colWidths=[60*mm, 40*mm, 30*mm, 30*mm, 30*mm], repeatRows=1)
 
         style = TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#C00000')), # Red header
