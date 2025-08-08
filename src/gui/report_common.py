@@ -222,3 +222,23 @@ class ComunReportes:
                     'detalle': asistencia_dia
                 })
         return incidents
+
+    def obtener_asistencia_general_por_dia(self, fecha):
+        """
+        Obtiene el estado de asistencia de todos los empleados para un día específico.
+        """
+        summary = []
+        employees = self.obtener_empleados_activos()
+
+        for emp_id, first_name, last_name in employees:
+            daily_data = self.calcular_asistencia_diaria(emp_id, fecha, fecha)
+            if not daily_data:
+                continue
+
+            asistencia_dia = daily_data[0]
+            summary.append({
+                'nombre': f"{first_name} {last_name}",
+                'id': emp_id,
+                'detalle': asistencia_dia
+            })
+        return summary

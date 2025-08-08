@@ -3,7 +3,8 @@ from tkinter import ttk
 from .daily_report import DailyReportWindow
 from .monthly_report import MonthlyReportWindow
 from .punch_log_report import PunchLogReportWindow
-from .incidents_report import IncidentsReportWindow # To be created
+from .incidents_report import IncidentsReportWindow
+from .daily_summary_report import DailySummaryReportWindow # To be created
 
 class MainMenu(tk.Tk):
     def __init__(self, db):
@@ -30,6 +31,7 @@ class MainMenu(tk.Tk):
             ("Reporte de Asistencia Mensual", self.open_monthly_report),
             ("Registro de Marcaciones", self.open_punch_log_report),
             ("Reporte de Incidencias", self.open_incidents_report),
+            ("Resumen Diario General", self.open_daily_summary_report),
             ("Salir", self.quit)
         ]
 
@@ -57,3 +59,6 @@ class MainMenu(tk.Tk):
 
     def open_incidents_report(self):
         IncidentsReportWindow(self)
+
+    def open_daily_summary_report(self):
+        DailySummaryReportWindow(self)
