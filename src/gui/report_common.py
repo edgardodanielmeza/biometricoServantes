@@ -122,11 +122,11 @@ class ComunReportes:
                     elif entrada is None and salida is None:
                         estado = "Falta"
                     else:
-                    if entrada and hora_entrada_esperada and hora_entrada_esperada not in ["Libre", "00:00"]:
-                        entrada_dt = datetime.strptime(entrada, "%H:%M:%S")
-                        entrada_esperada_dt = datetime.strptime(hora_entrada_esperada, "%H:%M")
-                        if entrada_dt > entrada_esperada_dt:
-                            estado = "Tardanza"
+                        if entrada and hora_entrada_esperada and hora_entrada_esperada not in ["Libre", "00:00"]:
+                            entrada_dt = datetime.strptime(entrada, "%H:%M:%S")
+                            entrada_esperada_dt = datetime.strptime(hora_entrada_esperada, "%H:%M")
+                            if entrada_dt > entrada_esperada_dt:
+                                estado = "Tardanza"
 
                     if salida and hora_salida_esperada and hora_salida_esperada not in ["", "00:00"]:
                         salida_dt = datetime.strptime(salida, "%H:%M:%S")
