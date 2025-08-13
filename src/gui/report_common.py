@@ -104,29 +104,36 @@ class ComunReportes:
                 dia_semana_ingles = calendar.day_name[fecha_actual.weekday()]
                 dia_semana = DIAS_ESPANOL.get(dia_semana_ingles, dia_semana_ingles)
 
-                # Prioridad 1: Verificar si es feriado
+                # Lógica de estado con prioridades
+                estado = "Normal"
+                entrada, salida = registros_dict.get(fecha_str, (None, None))
+                hora_entrada_esperada, hora_salida_esperada = "",""
+
+                # 1. Feriado
                 if self.es_feriado(fecha_actual):
                     estado = "Feriado"
-                    hora_entrada_esperada, hora_salida_esperada = "Feriado", ""
                     entrada, salida = None, None
                 else:
-                    # Si no es feriado, proceder con la lógica normal
-                    hora_entrada_esperada, hora_salida_esperada = self.obtener_horario_empleado_por_dia(employee_id, fecha_actual)
-                    entrada, salida = registros_dict.get(fecha_str, (None, None))
-
-                    estado = "Normal"
-                    if hora_entrada_esperada == "Libre":
-                        estado = "Día Libre"
-                    elif hora_entrada_esperada == "00:00" and hora_salida_esperada == "00:00":
-                        estado = "No laborable"
-                    elif entrada is None and salida is None:
-                        estado = "Falta"
+                    # 2. Excepción del empleado (Vacaciones, etc.)
+                    excepcion = self.obtener_excepcion_del_dia(employee_id, fecha_actual)
+                    if excepcion:
+                        estado = excepcion
+                        entrada, salida = None, None
                     else:
-                        if entrada and hora_entrada_esperada and hora_entrada_esperada not in ["Libre", "00:00"]:
-                            entrada_dt = datetime.strptime(entrada, "%H:%M:%S")
-                            entrada_esperada_dt = datetime.strptime(hora_entrada_esperada, "%H:%M")
-                            if entrada_dt > entrada_esperada_dt:
-                                estado = "Tardanza"
+                        # 3. Lógica normal de horario y marcaciones
+                        hora_entrada_esperada, hora_salida_esperada = self.obtener_horario_empleado_por_dia(employee_id, fecha_actual)
+                        if hora_entrada_esperada == "Libre":
+                            estado = "Día Libre"
+                        elif hora_entrada_esperada == "00:00" and hora_salida_esperada == "00:00":
+                            estado = "No laborable"
+                        elif entrada is None and salida is None:
+                            estado = "Falta"
+                        else: # Día laborable con marcaciones
+                            if entrada and hora_entrada_esperada and hora_entrada_esperada not in ["Libre", "00:00"]:
+                                entrada_dt = datetime.strptime(entrada, "%H:%M:%S")
+                                entrada_esperada_dt = datetime.strptime(hora_entrada_esperada, "%H:%M")
+                                if entrada_dt > entrada_esperada_dt:
+                                    estado = "Tardanza"
 
                     if salida and hora_salida_esperada and hora_salida_esperada not in ["", "00:00"]:
                         salida_dt = datetime.strptime(salida, "%H:%M:%S")
@@ -254,6 +261,25 @@ class ComunReportes:
         fecha_str = fecha.strftime('%Y-%m-%d')
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
-            # Comparamos solo la parte de la fecha, ignorando la hora
             cursor.execute("SELECT id FROM hr_holiday_details WHERE date(hor_date) = ?", (fecha_str,))
             return cursor.fetchone() is not None
+
+    def obtener_excepcion_del_dia(self, employee_id, fecha):
+        """
+        Verifica si un empleado tiene una excepción (ej. vacaciones) en una fecha específica.
+        Devuelve el nombre de la excepción si se encuentra, de lo contrario None.
+        """
+        fecha_str = fecha.strftime('%Y-%m-%d')
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            # Asumimos que las columnas de fecha en att_exceptionassign son start_time y end_time
+            query = """
+                SELECT p.pay_name
+                FROM att_exceptionassign e
+                JOIN hr_paycode p ON e.exception_id = p.id
+                WHERE e.employee_id = ? AND date(?) BETWEEN date(e.start_time) AND date(e.end_time)
+                LIMIT 1
+            """
+            cursor.execute(query, (employee_id, fecha_str))
+            resultado = cursor.fetchone()
+            return resultado[0] if resultado else None
