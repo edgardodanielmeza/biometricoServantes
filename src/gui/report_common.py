@@ -272,12 +272,12 @@ class ComunReportes:
         fecha_str = fecha.strftime('%Y-%m-%d')
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
-            # Asumimos que las columnas de fecha en att_exceptionassign son start_time y end_time
+            # Corregido para usar la columna 'exception_date' como indicó el usuario.
             query = """
-                SELECT p.pay_name
+                SELECT p.pc_desc
                 FROM att_exceptionassign e
-                JOIN hr_paycode p ON e.exception_id = p.id
-                WHERE e.employee_id = ? AND date(?) BETWEEN date(e.start_time) AND date(e.end_time)
+                JOIN hr_paycode p ON e.paycode_id = p.id
+                WHERE e.employee_id = ? AND date(e.exception_date) = date(?)
                 LIMIT 1
             """
             cursor.execute(query, (employee_id, fecha_str))
