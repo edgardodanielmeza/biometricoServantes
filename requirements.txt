@@ -1,0 +1,20 @@
+# Tkinter Calendar Widget
+tkcalendar==1.6.1
+
+# PDF Generation
+reportlab==4.0.4
+
+# Excel Export
+openpyxl==3.1.2
+
+# Image Handling for Tkinter
+Pillow==10.0.0
+
+# PDF Viewing
+PyMuPDF==1.23.3
+
+# Windows-specific APIs (for printing)
+pypiwin32==223
+
+# Internationalization (dependency for tkcalendar)
+Babel==2.12.1
