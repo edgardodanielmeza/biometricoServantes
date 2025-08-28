@@ -33,7 +33,7 @@ class DailySummaryReportWindow(tk.Toplevel):
         date_frame.pack(fill=tk.X, pady=10)
 
         tk.Label(date_frame, text="Seleccionar Fecha:", font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
-        self.cal_fecha = DateEntry(date_frame, date_pattern='dd/mm/yyyy', font=("Arial", 12), width=12)
+        self.cal_fecha = DateEntry(date_frame, date_pattern='dd/mm/yyyy', font=("Arial", 12), width=12, locale='es_ES')
         self.cal_fecha.pack(side=tk.LEFT, padx=5)
 
         btn_frame = tk.Frame(main_frame)

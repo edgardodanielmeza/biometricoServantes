@@ -63,11 +63,11 @@ class DailyReportWindow(tk.Toplevel):
         date_frame.pack(fill=tk.X, pady=10)
 
         tk.Label(date_frame, text="Fecha Inicio:", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5, sticky='e')
-        self.cal_inicio = DateEntry(date_frame, date_pattern='dd/mm/yyyy', font=("Arial", 12), width=12)
+        self.cal_inicio = DateEntry(date_frame, date_pattern='dd/mm/yyyy', font=("Arial", 12), width=12, locale='es_ES')
         self.cal_inicio.grid(row=0, column=1, padx=5, pady=5, sticky='w')
 
         tk.Label(date_frame, text="Fecha Fin:", font=("Arial", 12)).grid(row=0, column=2, padx=5, pady=5, sticky='e')
-        self.cal_fin = DateEntry(date_frame, date_pattern='dd/mm/yyyy', font=("Arial", 12), width=12)
+        self.cal_fin = DateEntry(date_frame, date_pattern='dd/mm/yyyy', font=("Arial", 12), width=12, locale='es_ES')
         self.cal_fin.grid(row=0, column=3, padx=5, pady=5, sticky='w')
 
         # Botones
